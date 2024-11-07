@@ -467,3 +467,39 @@ def sort_tags(tagged_y_label):
     sorted_tags.extend(other_tags) # 정렬이 완료된 태그항목
 
     return sorted_tags
+
+
+
+# 스페셜토큰에 접두토큰, 접미토큰이 있을 시
+# 문서의 접두, 접미에 추가해주는 함수
+def prefix_suffix_token_insert(e_docs, spec_token):
+    try:
+        en_sos = spec_token.index('<SOS>')
+        en_eos = spec_token.index('<EOS>')
+    except ValueError as e:
+        raise ValueError("SOS,EOS토큰이 없음") from e
+
+    res_e_doc = []
+    for e_doc in e_docs:
+        e_doc.insert(0, en_sos) #맨앞에 sos토큰추가
+        e_doc.append(en_eos) #맨 뒤에 eos토큰 추가
+
+        res_e_doc.append(e_doc)
+
+    return res_e_doc
+
+#seq2seq에서 번역된 구문에 대한 후처리 함수
+def Translater_post_processor(encode_doc, idx_to_word, spec_token):
+    decode_doc = ['<SOS>'] #코드 안정성을 위해 맨앞에 토큰 추가
+    for en_word in encode_doc:
+        #인코딩된 단어 -> 디코드화
+        #디코딩한 단어가 없는 경우 스페셜토큰의 <UNK>로 변경
+        de_word = idx_to_word.get(en_word, spec_token[1])  
+        # 디코딩한 단어가 subword인 경우
+        if de_word.startswith('##'):
+            decode_doc[-1] += de_word[2:]
+        # 디코딩한 결과가 스페셜 토큰이 아닌것만 문장에 추가
+        elif de_word not in spec_token:
+            decode_doc.append(de_word)
+    decode_doc.pop(0) #리스트의 맨 앞 원소 삭제
+    return ' '.join(decode_doc)
