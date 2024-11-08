@@ -1,5 +1,6 @@
 import torch
 from tqdm import tqdm
+import matplotlib.pyplot as plt
 
 def data_reshape(tar_pred, tar_data, tar_mask):
     # 입력되는 tar_pred : (Batch_size, tar_seq_len, tar_vocab_dim)
@@ -168,3 +169,17 @@ class TeacherForcingScheduler:
     def step(self):
         # 에폭 수를 증가시켜 비율을 감소시킴
         self.current_epoch += 1
+
+    def demo(self, num_epoch=40):
+        # 에폭에 따른 Teacher Forcing 비율 변화를 그래프로 시각화
+        tf_ratios = []
+        for epoch in range(num_epoch):
+            tf_ratios.append(self.get_ratio())
+            self.step()
+        
+        plt.figure(figsize=(6, 4))
+        plt.plot(range(num_epoch), tf_ratios)
+        plt.xlabel("epoch")
+        plt.ylabel("TF-ratio")
+        plt.title("TF Ratio Changes with Increasing Epochs")
+        plt.show()
