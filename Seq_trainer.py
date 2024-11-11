@@ -137,7 +137,7 @@ def model_evaluate(model, data_loader, loss_fn,
 
 
 # 모델 추론용 함수
-def model_inference(model, src_data):
+def model_inference(model, src_data, BW=1):
     device = next(model.parameters()).device # 모델의 연산위치 확인
     model.eval() # 모델을 평가 모드로 설정
 
@@ -145,11 +145,15 @@ def model_inference(model, src_data):
         src_data = src_data.to(device)
         # 추론에서 입력되는 데이터 구조는 (1, src_seq_len)이다.
         # 추론 과정이기에 정답지(tar_data)는 입력하지 않는다.
-        tar_infer = model(src_data)
-        # 추론결과는 (BS=1, max_len) -> numpy자료형 변환
+        # Beamsearch의 search_space(Beam_width)값 설정
+        tar_infer = model(src_data, BW=BW)
+        # 추론결과는 (BS=1, max_len, BW) -> numpy자료형 변환
         nd_tar_infer = tar_infer.cpu().numpy()
 
-    return nd_tar_infer[0] #BS 차원을 날림
+    if tar_infer.size(0) == 1: # BS가 1 인 경우
+        return nd_tar_infer[0] #BS 차원을 날림
+    else:
+        return nd_tar_infer #(BS, max_len, BW)
 
 
 # Techer Forcing 비율을 epoch가 증가할수록 감소하기 위한 클래스
