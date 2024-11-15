@@ -137,7 +137,7 @@ def model_evaluate(model, data_loader, loss_fn,
 
 
 # 모델 추론용 함수
-def model_inference(model, src_data, BW=1):
+def model_inference(model, src_data, BW=None):
     device = next(model.parameters()).device # 모델의 연산위치 확인
     model.eval() # 모델을 평가 모드로 설정
 
@@ -146,7 +146,10 @@ def model_inference(model, src_data, BW=1):
         # 추론에서 입력되는 데이터 구조는 (1, src_seq_len)이다.
         # 추론 과정이기에 정답지(tar_data)는 입력하지 않는다.
         # Beamsearch의 search_space(Beam_width)값 설정
-        tar_infer = model(src_data, BW=BW)
+        if BW is None: # Beam_search가 적용되지 않는 기본모드
+            tar_infer = model(src_data)
+        else:
+            tar_infer = model(src_data, BW=BW)
         # 추론결과는 (BS=1, max_len, BW) -> numpy자료형 변환
         nd_tar_infer = tar_infer.cpu().numpy()
 
