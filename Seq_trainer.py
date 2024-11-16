@@ -57,11 +57,13 @@ def model_train(model, data_loader, loss_fn, optimizer_fn,
         # 번역문의 PAD토큰은 마스크 처리하자
         tar_mask = (tar_data != ignore_class)
 
-        # 현재의 Techer forcing ratio 정보를 가져오기
-        TF_ratio = TF_schedular.get_ratio() if TF_schedular is not None else 1.0
-
-        # Forward, 모델이 예측값을 만들게 함
-        tar_pred = model(src_data, tar_data, TF_ratio=TF_ratio) 
+        if TF_schedular is None:
+            tar_pred = model(src_data, tar_data)
+        else:
+            # 현재의 Techer forcing ratio 정보를 가져오기
+            TF_ratio =  TF_schedular.get_ratio()
+            # Forward, 모델이 예측값을 만들게 함
+            tar_pred = model(src_data, tar_data, TF_ratio=TF_ratio) 
 
         # 데이터의 적절한 구조변환 수행
         tar_pred, tar_data, tar_mask = data_reshape(tar_pred, tar_data, tar_mask)
@@ -116,8 +118,11 @@ def model_evaluate(model, data_loader, loss_fn,
             src_data, tar_data = src_data.to(device), tar_data.to(device)
             # 번역문의 PAD토큰은 마스크 처리하자
             tar_mask = (tar_data != ignore_class)
-            # Forward, 모델이 예측값 비지도-자기회귀모델 방식으로 만들게 함
-            tar_pred = model(src_data, tar_data, TF_ratio=0.0) 
+
+            try: # Forward, 모델이 예측값 비지도-자기회귀모델 방식으로 만들게 함
+                tar_pred = model(src_data, tar_data, TF_ratio=0.0) 
+            except: #TF_ratio가 없는 경우에는 예외처리의 아래구문 실행
+                tar_pred = model(src_data, tar_data)
 
             # 데이터의 적절한 구조변환 수행
             tar_pred, tar_data, tar_mask = data_reshape(tar_pred, tar_data, tar_mask)
